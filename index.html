@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Video Clipper</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        /* Modern CSS Reset */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Variables */
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary-color: #6b7280;
+            --background-color: #f3f4f6;
+            --card-background: #ffffff;
+            --text-color: #1f2937;
+            --border-color: #e5e7eb;
+            --border-radius: 8px;
+            --transition: all 0.3s ease;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f0f4ff 0%, #f7f7ff 100%);
+            color: var(--text-color);
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--card-background);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            background: linear-gradient(135deg, var(--primary-color), #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .url-input-group {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .url-input-group input {
+            flex: 1;
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .primary-btn {
+            background: var(--primary-color);
+            color: white;
+            width: 100%;
+        }
+
+        .primary-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .secondary-btn {
+            background: white;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+        }
+
+        .secondary-btn:hover {
+            background: rgba(79, 70, 229, 0.05);
+        }
+
+        .time-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .video-info {
+            background: var(--background-color);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+        }
+
+        #loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #timeControls {
+            animation: fadeIn 0.3s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>YouTube Video Clipper</h1>
+        <form method="POST" id="clipForm">
+            <div class="input-group">
+                <label for="youtube_url">YouTube Video URL</label>
+                <div class="url-input-group">
+                    <input 
+                        type="text" 
+                        id="youtube_url" 
+                        name="youtube_url" 
+                        placeholder="https://youtube.com/watch?v=..." 
+                        required
+                    >
+                    <button type="button" id="checkVideo" class="secondary-btn">Check Video</button>
+                </div>
+            </div>
+
+            <div id="timeControls" style="display: none;">
+                <div class="video-info">
+                    <p>Video Duration: <span id="videoDuration">0:00</span></p>
+                </div>
+
+                <div class="time-inputs">
+                    <div class="input-group">
+                        <label for="start_time">Start Time (seconds)</label>
+                        <input 
+                            type="number" 
+                            id="start_time" 
+                            name="start_time" 
+                            min="0" 
+                            step="0.1" 
+                            required
+                        >
+                    </div>
+
+                    <div class="input-group">
+                        <label for="end_time">End Time (seconds)</label>
+                        <input 
+                            type="number" 
+                            id="end_time" 
+                            name="end_time" 
+                            min="0" 
+                            step="0.1" 
+                            required
+                        >
+                    </div>
+                </div>
+
+                <button type="submit" class="primary-btn">Generate Clip</button>
+            </div>
+        </form>
+
+        <div id="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Processing your video...</p>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#checkVideo').click(function() {
+                const url = $('#youtube_url').val();
+                if (!url) return;
+
+                $.ajax({
+                    url: '/get-video-info',
+                    method: 'POST',
+                    data: { youtube_url: url },
+                    success: function(response) {
+                        $('#videoDuration').text(response.duration_formatted);
+                        $('#end_time').attr('max', response.duration);
+                        $('#start_time').attr('max', response.duration);
+                        $('#timeControls').show();
+                    },
+                    error: function() {
+                        alert('Error getting video information');
+                    }
+                });
+            });
+
+            $('#clipForm').submit(function() {
+                $('#loading').show();
+            });
+        });
+    </script>
+</body>
+</html>
